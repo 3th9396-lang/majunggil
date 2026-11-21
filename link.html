@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<meta name="referrer" content="no-referrer">
+<title>마중길 아이 앱 연결</title>
+<link rel="stylesheet" href="style.css">
+<style>
+  /* 이 페이지에만 쓰는 버튼·숫자 (공용 style.css는 건드리지 않는다) */
+  .button{display:block;text-align:center;padding:16px;border-radius:14px;background:var(--accent);color:#fff;font-weight:800;font-size:17px;text-decoration:none}
+  .code{font-size:32px;font-weight:800;letter-spacing:4px;text-align:center;margin:8px 0 0}
+</style>
+</head>
+<body>
+<!--
+  아이 폰 연결 링크 (Q2, 2026-11-21 사용자 결정 A). 보호자 앱이 보내는 주소: link.html#c=123456
+  - 숫자는 # 뒤에 둔다: 브라우저가 서버로 보내지 않아 GitHub 접속 기록에 남지 않는다. 이 페이지는 바깥 스크립트·통계를 쓰지 않는다
+  - 안드로이드: 아이 앱을 연다(majunggilkid://link?c=…). 앱이 없으면 Play 스토어로 가며 설치 정보(referrer)에 c=…를 담는다
+    → 설치 뒤 아이 앱 연결하기 화면이 그 숫자를 채운다. 연결은 아이가 [연결하기]를 직접 눌러야 된다
+  - 그 밖(아이폰·PC)·앱이 안 열릴 때: 숫자를 보여 주고 손으로 넣게 한다
+  - 원본은 05-family-app 저장소 web/policies/link.html. 고치면 공개 저장소(3th9396-lang/majunggil)에 복사해 올린다
+-->
+<main>
+<header>
+  <span class="brand">마중길</span>
+  <h1>마중길 아이 앱 연결</h1>
+  <p class="meta">보호자가 보낸 연결 링크예요</p>
+</header>
+
+<div id="ok" hidden>
+  <p><a id="open" class="button" href="#">마중길 아이 앱 열기</a></p>
+  <p>앱이 없으면 설치 화면으로 가요. 설치한 뒤 앱을 열면 숫자가 들어가 있어요. 숫자가 없으면 이 링크를 한 번 더 눌러 주세요.</p>
+  <div class="box">
+    <p>링크가 안 열리면 아이 앱에 이 숫자를 넣어요</p>
+    <p class="code" id="code"></p>
+  </div>
+</div>
+
+<div id="bad" hidden class="box">
+  <p>링크가 잘못됐거나 숫자가 빠졌어요. 보호자에게 링크를 다시 보내 달라고 해 주세요.</p>
+</div>
+</main>
+<script>
+(function () {
+  var PKG = 'kr.pantarei.majunggil.child';
+  var raw = (location.hash || '').replace(/^#/, '') + '&' + (location.search || '').replace(/^\?/, '');
+  var code = null;
+  raw.split('&').forEach(function (p) {
+    var i = p.indexOf('=');
+    if (i > 0 && p.slice(0, i) === 'c') {
+      try { code = decodeURIComponent(p.slice(i + 1)); } catch (e) { code = null; }
+    }
+  });
+  if (!code || !/^[0-9]{6}$/.test(code)) {
+    document.getElementById('bad').hidden = false;
+    return;
+  }
+  document.getElementById('ok').hidden = false;
+  document.getElementById('code').textContent = code.slice(0, 3) + ' ' + code.slice(3);
+  var android = /android/i.test(navigator.userAgent);
+  var store = 'https://play.google.com/store/apps/details?id=' + PKG + '&referrer=' + encodeURIComponent('c=' + code);
+  var href = android
+    ? 'intent://link?c=' + code + '#Intent;scheme=majunggilkid;package=' + PKG + ';S.browser_fallback_url=' + encodeURIComponent(store) + ';end'
+    : 'majunggilkid://link?c=' + code;
+  var open = document.getElementById('open');
+  open.href = href;
+  // 안드로이드는 열리자마자 한 번 앱으로 (막히는 브라우저는 버튼으로)
+  if (android) setTimeout(function () { location.href = href; }, 300);
+})();
+</script>
+</body>
+</html>

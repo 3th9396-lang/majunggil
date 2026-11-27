@@ -19,7 +19,9 @@
   - 숫자는 # 뒤에 둔다: 브라우저가 서버로 보내지 않아 GitHub 접속 기록에 남지 않는다. 이 페이지는 바깥 스크립트·통계를 쓰지 않는다
   - 안드로이드: 아이 앱을 연다(majunggilkid://link?c=…). 앱이 없으면 Play 스토어로 가며 설치 정보(referrer)에 c=…를 담는다
     → 설치 뒤 아이 앱 연결하기 화면이 그 숫자를 채운다. 연결은 아이가 [연결하기]를 직접 눌러야 된다
-  - 그 밖(아이폰·PC)·앱이 안 열릴 때: 숫자를 보여 주고 손으로 넣게 한다
+  - 아이폰 (2026-11-25 아이폰 점검표): 저절로 넘기지 않고 [앱 열기] 버튼만 (앱이 없으면 사파리가 '주소가 유효하지 않음' 창을 띄워서, 반뼘 초대 페이지와 같게).
+    App Store 버튼은 APP_STORE_ID가 생기면 보이고, 그 전엔 '아이폰 앱은 곧 나와요' 한 줄
+  - 그 밖(PC)·앱이 안 열릴 때: 숫자를 보여 주고 손으로 넣게 한다
   - 원본은 05-family-app 저장소 web/policies/link.html. 고치면 공개 저장소(3th9396-lang/majunggil)에 복사해 올린다
 -->
 <main>
@@ -30,8 +32,16 @@
 </header>
 
 <div id="ok" hidden>
-  <p><a id="open" class="button" href="#">마중길 아이 앱 열기</a></p>
-  <p>앱이 없으면 설치 화면으로 가요. 설치한 뒤 앱을 열면 숫자가 들어가 있어요. 숫자가 없으면 이 링크를 한 번 더 눌러 주세요.</p>
+  <div id="android" hidden>
+    <p><a id="open" class="button" href="#">마중길 아이 앱 열기</a></p>
+    <p>앱이 없으면 설치 화면으로 가요. 설치한 뒤 앱을 열면 숫자가 들어가 있어요. 숫자가 없으면 이 링크를 한 번 더 눌러 주세요.</p>
+  </div>
+  <div id="ios" hidden>
+    <p><a id="iosOpen" class="button" href="#">마중길 아이 앱 열기</a></p>
+    <p><a id="appStore" class="button" href="#" hidden>App Store에서 받기</a></p>
+    <p class="meta" id="iosSoon" hidden>아이폰 앱은 곧 나와요.</p>
+    <p>앱이 열리지 않으면 아이 앱을 설치하고 열어서 아래 숫자를 넣어 주세요.</p>
+  </div>
   <div class="box">
     <p>링크가 안 열리면 아이 앱에 이 숫자를 넣어요</p>
     <p class="code" id="code"></p>
@@ -59,15 +69,31 @@
   }
   document.getElementById('ok').hidden = false;
   document.getElementById('code').textContent = code.slice(0, 3) + ' ' + code.slice(3);
-  var android = /android/i.test(navigator.userAgent);
-  var store = 'https://play.google.com/store/apps/details?id=' + PKG + '&referrer=' + encodeURIComponent('c=' + code);
-  var href = android
-    ? 'intent://link?c=' + code + '#Intent;scheme=majunggilkid;package=' + PKG + ';S.browser_fallback_url=' + encodeURIComponent(store) + ';end'
-    : 'majunggilkid://link?c=' + code;
-  var open = document.getElementById('open');
-  open.href = href;
-  // 안드로이드는 열리자마자 한 번 앱으로 (막히는 브라우저는 버튼으로)
-  if (android) setTimeout(function () { location.href = href; }, 300);
+  var ua = navigator.userAgent;
+  var android = /android/i.test(ua);
+  // 아이폰·아이패드 (아이패드 사파리는 맥처럼 보이지만 터치가 있다)
+  var ios = /iPhone|iPad|iPod/i.test(ua) || (/Macintosh/i.test(ua) && navigator.maxTouchPoints > 1);
+  // App Store 앱 번호. 출시 전이라 null (null이면 App Store 버튼을 숨기고 '곧 나와요')
+  var APP_STORE_ID = null;
+  var scheme = 'majunggilkid://link?c=' + code;
+  if (android) {
+    var store = 'https://play.google.com/store/apps/details?id=' + PKG + '&referrer=' + encodeURIComponent('c=' + code);
+    var href = 'intent://link?c=' + code + '#Intent;scheme=majunggilkid;package=' + PKG + ';S.browser_fallback_url=' + encodeURIComponent(store) + ';end';
+    document.getElementById('android').hidden = false;
+    document.getElementById('open').href = href;
+    // 안드로이드는 열리자마자 한 번 앱으로 (막히는 브라우저는 버튼으로)
+    setTimeout(function () { location.href = href; }, 300);
+  } else if (ios) {
+    document.getElementById('ios').hidden = false;
+    document.getElementById('iosOpen').href = scheme; // 누를 때만 연다 (저절로 넘기지 않음)
+    if (APP_STORE_ID) {
+      var a = document.getElementById('appStore');
+      a.href = 'https://apps.apple.com/kr/app/id' + APP_STORE_ID;
+      a.hidden = false;
+    } else {
+      document.getElementById('iosSoon').hidden = false;
+    }
+  }
 })();
 </script>
 </body>
